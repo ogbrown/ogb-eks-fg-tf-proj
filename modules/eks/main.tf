@@ -13,7 +13,7 @@ resource "aws_eks_cluster" "fargate" {
     subnet_ids = var.eks_subnet_ids
     security_group_ids     = [var.eks_security_group_id]
     endpoint_public_access = true # Enable public access
-    endpoint_private_access = false # Disable private access to reduce costs
+    endpoint_private_access = true # Disable private access to reduce costs
   }
   # No node group; Fargate only
 }
@@ -23,7 +23,7 @@ resource "aws_eks_fargate_profile" "default" {
   fargate_profile_name   = "default"
   pod_execution_role_arn = data.aws_iam_role.pod_execution_role.arn
   subnet_ids             = var.eks_subnet_ids
-  
+
   selector {
     namespace = "default"
   }

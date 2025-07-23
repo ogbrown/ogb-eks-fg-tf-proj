@@ -18,7 +18,7 @@ data "aws_subnet" "eks-c" {
   }
   filter {
     name   = "tag:Public"
-    values = ["true"] # Ensure the subnet is tagged as public
+    values = ["false"] # Ensure the subnet is tagged as private
   }
 }
 
@@ -34,7 +34,7 @@ data "aws_subnet" "eks-b" {
   }
   filter {
     name   = "tag:Public"
-    values = ["true"] # Ensure the subnet is tagged as public
+    values = ["false"] # Ensure the subnet is tagged as private
   }
 }
 
