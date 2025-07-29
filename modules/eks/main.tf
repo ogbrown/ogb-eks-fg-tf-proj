@@ -29,3 +29,51 @@ resource "aws_eks_fargate_profile" "default" {
   }
   tags = var.tags
 }
+
+resource "aws_iam_policy" "alb_controller_policy" {
+  name        = "${var.short_project_name}-alb-controller-policy"
+  description = "IAM policy for AWS Load Balancer Controller"
+  policy      = file("${path.module}/../iam/policies/aws-load-balancer-controller-policy.json")
+}
+
+resource "aws_iam_role_policy_attachment" "alb_controller_policy_attachment" {
+  role       = data.aws_iam_role.pod_execution_role.name
+  policy_arn = aws_iam_policy.alb_controller_policy.arn
+}
+# Ensure the AWS Load Balancer Controller is installed in the EKS cluster
+# This module assumes that the AWS Load Balancer Controller Helm chart is available in the specified repository.
+# The chart version should be updated as necessary to match the latest stable release.
+
+resource "helm_release" "aws_load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  chart      = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  version    = "1.5.3"
+
+  values = [
+    <<EOF
+clusterName: ${aws_eks_cluster.fargate.name}
+serviceAccount:
+  create: false
+  name: aws-load-balancer-controller
+EOF
+  ]
+
+  depends_on = [aws_eks_cluster.fargate]
+}
+
+resource "kubernetes_service_account" "alb_controller_sa" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+  }
+
+  automount_service_account_token = true
+}
+
+resource "aws_iam_role_policy_attachment" "alb_controller_sa_attachment" {
+  role       = data.aws_iam_role.pod_execution_role.name
+  policy_arn = aws_iam_policy.alb_controller_policy.arn
+}
+
